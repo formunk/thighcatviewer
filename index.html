@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Munk</title>
+    <style>
+        :root { 
+            --cat: #ff4500; 
+            --femboy: #ff69b4; 
+            --ui-bg: rgba(10, 10, 10, 0.9);
+        }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: sans-serif; 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+        #container { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 4px; 
+            padding: 4px 4px 100px 4px; 
+        }
+        .item { 
+            aspect-ratio: 1/1; 
+            background: #0a0a0a; 
+            border-radius: 2px; 
+            overflow: hidden; 
+        }
+        .item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        #overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.98); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+        }
+        #overlay img { 
+            max-width: 100%; 
+            max-height: 85%; 
+            object-fit: contain; 
+        }
+        #ui { 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            height: 85px; 
+            background: var(--ui-bg); 
+            backdrop-filter: blur(20px); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 99; 
+            border-top: 1px solid #222; 
+        }
+        .row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-around; 
+            width: 95%; 
+            margin: 4px 0; 
+        }
+        .tgl { 
+            position: relative; 
+            width: 50px; 
+            height: 24px; 
+        }
+        .tgl input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
+        .tgl-slide { 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: #222; 
+            border-radius: 30px; 
+            transition: .3s; 
+        }
+        .tgl-slide:before { 
+            position: absolute; 
+            content: ""; 
+            height: 18px; 
+            width: 18px; 
+            left: 3px; 
+            bottom: 3px; 
+            background: white; 
+            border-radius: 50%; 
+            transition: .3s; 
+        }
+        input:checked + .tgl-slide { background: var(--femboy); }
+        input:checked + .tgl-slide:before { transform: translateX(26px); }
+        input[type=range] { 
+            flex: 1; 
+            margin: 0 15px; 
+            accent-color: #fff; 
+        }
+        .label { 
+            font-size: 10px; 
+            font-weight: bold; 
+            color: #666; 
+        }
+        .ov-btns { 
+            margin-top: 15px; 
+            display: flex; 
+            gap: 15px; 
+        }
+        .ov-btns button, .ov-btns a { 
+            background: #fff; 
+            color: #000; 
+            border: 0; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            text-decoration: none; 
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+<div id="overlay" onclick="closeFS()">
+    <img id="fs-img">
+    <div class="ov-btns">
+        <a id="dl-link" download="img.jpg" onclick="event.stopPropagation()">Download</a>
+        <button onclick="closeFS()">Close</button>
+    </div>
+</div>
+
+<div id="ui">
+    <div class="row">
+        <span class="label" style="color:var(--cat)">CATS</span>
+        <label class="tgl"><input type="checkbox" id="tog" onchange="resetLoad()"><span class="tgl-slide"></span></label>
+        <span class="label" style="color:var(--femboy)">FEMBOYS</span>
+    </div>
+    <div class="row">
+        <span class="label">SPEED</span>
+        <input type="range" id="spd" min="0" max="10" step="0.5" value="1.5">
+    </div>
+</div>
+
+<script>
+    let after = "", fetching = false;
+    const container = document.getElementById('container');
+    const overlay = document.getElementById('overlay');
+    const catSubs = ['cats', 'Kitten', 'Catpictures'];
+    const femboySubs = ['FemboyThighPics2'];
+
+    window.receiveData = (j) => {
+        after = j.data.after;
+        let posts = j.data.children.filter(p => {
+            const d = p.data;
+            return (d.post_hint === 'image' || d.url.match(/\.(jpg|png|gif|jpeg)$/));
+        });
+        posts.sort(() => Math.random() - 0.5);
+        posts.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'item';
+            const i = new Image();
+            i.src = p.data.url;
+            i.loading = "lazy";
+            i.onclick = (e) => { e.stopPropagation(); openFS(p.data.url); };
+            div.appendChild(i);
+            container.appendChild(div);
+        });
+        fetching = false;
+    };
+
+    function load() {
+        if (fetching) return; 
+        fetching = true;
+        const isFemboy = document.getElementById('tog').checked;
+        const subs = isFemboy ? femboySubs : catSubs;
+        const sub = subs[Math.floor(Math.random() * subs.length)];
+        const sc = document.createElement('script');
+        sc.src = `https://www.reddit.com/r/${sub}/hot.json?limit=50&after=${after}&jsonp=receiveData&cb=${Math.random()}`;
+        document.body.appendChild(sc);
+        sc.onload = () => sc.remove();
+    }
+
+    function resetLoad() {
+        container.innerHTML = '';
+        after = "";
+        window.scrollTo(0,0);
+        for(let i=0; i<3; i++) setTimeout(load, i*400);
+    }
+
+    function openFS(u) { 
+        document.getElementById('fs-img').src = u; 
+        document.getElementById('dl-link').href = u; 
+        overlay.style.display = 'flex'; 
+    }
+    
+    function closeFS() { 
+        overlay.style.display = 'none'; 
+        document.getElementById('fs-img').src = ""; 
+    }
+
+    function loop() {
+        const s = parseFloat(document.getElementById('spd').value);
+        if (s > 0 && overlay.style.display !== 'flex') window.scrollBy(0, s);
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2000) load();
+        requestAnimationFrame(loop);
+    }
+
+    resetLoad();
+    loop();
+</script>
+</body>
+</html>
