@@ -3,135 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>For Munk</title>
+    <title>For Munk - Optimized</title>
     <style>
-        :root { 
-            --cat: #ff4500; 
-            --femboy: #ff69b4; 
-            --ui-bg: rgba(10, 10, 10, 0.9);
-        }
+        :root { --cat: #ff4500; --femboy: #ff69b4; --ui-bg: rgba(10, 10, 10, 0.95); }
+        
+        /* Optimization: will-change tells the GPU to prepare for scrolling */
         body { 
             background: #000; 
             color: #fff; 
             font-family: sans-serif; 
             margin: 0; 
-            overflow-x: hidden; 
+            overflow-x: hidden;
+            will-change: scroll-position; 
         }
+
         #container { 
             display: grid; 
-            /* Responsive Grid: Cards will be at least 180px wide */
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
-            gap: 4px; 
-            padding: 4px 4px 100px 4px; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 2px; 
+            padding: 2px 2px 100px 2px; 
         }
-        /* Fallback for very small screens to ensure at least 2 columns */
-        @media (max-width: 380px) {
-            #container { grid-template-columns: 1fr 1fr; }
-        }
+        
+        @media (max-width: 480px) { #container { grid-template-columns: repeat(3, 1fr); } }
+
         .item { 
             aspect-ratio: 1/1; 
             background: #0a0a0a; 
-            border-radius: 2px; 
             overflow: hidden; 
+            position: relative;
+            /* CRITICAL: Tells browser not to paint items far off-screen */
+            content-visibility: auto;
+            contain-intrinsic-size: 150px; 
         }
-        .item img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
+
+        .item img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
+        .item img.loaded { opacity: 1; }
+
         #overlay { 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.98); 
-            display: none; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 1000; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.98); display: none; 
+            flex-direction: column; align-items: center; justify-content: center; z-index: 1000; 
         }
-        #overlay img { 
-            max-width: 100%; 
-            max-height: 85%; 
-            object-fit: contain; 
-        }
+        #overlay img { max-width: 100%; max-height: 85%; object-fit: contain; }
+
         #ui { 
-            position: fixed; 
-            bottom: 0; width: 100%; height: 85px; 
+            position: fixed; bottom: 0; width: 100%; height: 90px; 
             background: var(--ui-bg); 
-            backdrop-filter: blur(20px); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 99; 
-            border-top: 1px solid #222; 
+            /* Removed backdrop-filter blur as it causes massive lag on mobile */
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 99; border-top: 1px solid #222; 
         }
-        .row { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-around; 
-            width: 95%; 
-            max-width: 600px; 
-            margin: 4px 0; 
-        }
-        .tgl { 
-            position: relative; 
-            width: 50px; 
-            height: 24px; 
-        }
+
+        .row { display: flex; align-items: center; justify-content: space-around; width: 95%; max-width: 600px; margin: 5px 0; }
+        
+        .tgl { position: relative; width: 50px; height: 26px; }
         .tgl input { opacity: 0; width: 0; height: 0; }
-        .tgl-slide { 
-            position: absolute; 
-            top: 0; left: 0; right: 0; bottom: 0; 
-            background: #222; 
-            border-radius: 30px; 
-            transition: .3s; 
-        }
-        .tgl-slide:before { 
-            position: absolute; 
-            content: ""; 
-            height: 18px; width: 18px; 
-            left: 3px; bottom: 3px; 
-            background: white; 
-            border-radius: 50%; 
-            transition: .3s; 
-        }
+        .tgl-slide { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; border-radius: 30px; transition: .3s; }
+        .tgl-slide:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
         input:checked + .tgl-slide { background: var(--femboy); }
-        input:checked + .tgl-slide:before { transform: translateX(26px); }
-        input[type=range] { 
-            flex: 1; 
-            margin: 0 15px; 
-            accent-color: #fff; 
-        }
-        .label { 
-            font-size: 10px; 
-            font-weight: bold; 
-            color: #666; 
-        }
-        .ov-btns { 
-            margin-top: 15px; 
-            display: flex; 
-            gap: 15px; 
-        }
-        .ov-btns button, .ov-btns a { 
-            background: #fff; 
-            color: #000; 
-            border: 0; 
-            padding: 10px 20px; 
-            border-radius: 5px; 
-            font-weight: bold; 
-            text-decoration: none; 
-            font-size: 14px;
-        }
+        input:checked + .tgl-slide:before { transform: translateX(24px); }
+
+        input[type=range] { flex: 1; margin: 0 15px; accent-color: #fff; cursor: pointer; }
+        .label { font-size: 10px; font-weight: bold; color: #888; letter-spacing: 1px; }
+        
+        .ov-btns { margin-top: 20px; display: flex; gap: 15px; }
+        .ov-btns button, .ov-btns a { background: #fff; color: #000; border: 0; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 14px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="container"></div>
+
 <div id="overlay" onclick="closeFS()">
     <img id="fs-img">
     <div class="ov-btns">
-        <a id="dl-link" download="img.jpg" onclick="event.stopPropagation()">Download</a>
+        <a id="dl-link" download="munk_comfort.jpg" onclick="event.stopPropagation()">Download</a>
         <button onclick="closeFS()">Close</button>
     </div>
 </div>
@@ -144,54 +90,95 @@
     </div>
     <div class="row">
         <span class="label">SPEED</span>
-        <input type="range" id="spd" min="0" max="10" step="0.5" value="1.5">
+        <input type="range" id="spd" min="0" max="10" step="0.1" value="1.5">
     </div>
 </div>
 
 <script>
-    let after = "", fetching = false;
+    let afters = {};
+    let fetching = false;
     const container = document.getElementById('container');
     const overlay = document.getElementById('overlay');
-    const catSubs = ['cats', 'Kitten', 'Catpictures'];
-    const femboySubs = ['FemboyThighPics2', 'femboyfitness'];
+    
+    const catSubs = ['cats', 'Kitten', 'Catpictures', 'StartledCats', 'curledfeetsies'];
+    const femboySubs = ['FemboyThighPics2'];
 
-    window.receiveData = (j) => {
-        after = j.data.after;
-        let posts = j.data.children.filter(p => {
-            const d = p.data;
-            return (d.post_hint === 'image' || d.url.match(/\.(jpg|png|gif|jpeg)$/));
-        });
-        posts.sort(() => Math.random() - 0.5);
+    // Helper to show status
+    function setStatus(msg) {
+        let s = document.getElementById('status');
+        if (!s) {
+            s = document.createElement('div');
+            s.id = 'status';
+            s.style = "position:fixed; top:10px; left:10px; background:rgba(0,0,0,0.7); padding:5px; font-size:10px; color:#555; z-index:1000;";
+            document.body.appendChild(s);
+        }
+        s.innerText = msg;
+    }
+
+    function processData(j) {
+        if (!j || !j.data || !j.data.children.length) { fetching = false; return; }
+        const sub = j.data.children[0].data.subreddit;
+        afters[sub] = j.data.after;
+        
+        let posts = j.data.children.filter(p => p.data.post_hint === 'image' || (p.data.url && p.data.url.match(/\.(jpg|png|gif|jpeg)$/i)));
+        
         posts.forEach(p => {
             const div = document.createElement('div');
             div.className = 'item';
             const i = new Image();
             i.src = p.data.url;
             i.loading = "lazy";
+            i.onload = () => i.classList.add('loaded');
             i.onclick = (e) => { e.stopPropagation(); openFS(p.data.url); };
             div.appendChild(i);
             container.appendChild(div);
         });
         fetching = false;
-    };
+        setStatus(""); // Clear loading msg
+    }
 
-    function load() {
-        if (fetching) return; 
+    async function fetchBatch(sub) {
+        const after = afters[sub] || "";
+        const redditUrl = `https://www.reddit.com/r/${sub}/hot.json?limit=30&after=${after}`;
+        
+        // PROXY RACE: Try three different proxies simultaneously
+        const proxies = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(redditUrl)}`,
+            `https://corsproxy.io/?${encodeURIComponent(redditUrl)}`,
+            `https://thingproxy.freeboard.io/fetch/${redditUrl}`
+        ];
+
+        setStatus(`Fetching r/${sub}...`);
+
+        try {
+            // Promise.any takes the FIRST one that succeeds
+            const response = await Promise.any(proxies.map(p => fetch(p).then(r => {
+                if(r.ok) return r.json();
+                throw new Error();
+            })));
+            processData(response);
+        } catch (error) {
+            console.error("All proxies failed.");
+            fetching = false;
+            setStatus("Wait... retrying...");
+            setTimeout(loadMore, 2000);
+        }
+    }
+
+    function loadMore() {
+        if (fetching) return;
         fetching = true;
         const isFemboy = document.getElementById('tog').checked;
         const subs = isFemboy ? femboySubs : catSubs;
-        const sub = subs[Math.floor(Math.random() * subs.length)];
-        const sc = document.createElement('script');
-        sc.src = `https://www.reddit.com/r/${sub}/hot.json?limit=50&after=${after}&jsonp=receiveData&cb=${Math.random()}`;
-        document.body.appendChild(sc);
-        sc.onload = () => sc.remove();
+        const randomSub = subs[Math.floor(Math.random() * subs.length)];
+        fetchBatch(randomSub);
     }
 
     function resetLoad() {
         container.innerHTML = '';
-        after = "";
+        afters = {};
         window.scrollTo(0,0);
-        for(let i=0; i<3; i++) setTimeout(load, i*400);
+        loadMore();
     }
 
     function openFS(u) { 
@@ -207,8 +194,13 @@
 
     function loop() {
         const s = parseFloat(document.getElementById('spd').value);
-        if (s > 0 && overlay.style.display !== 'flex') window.scrollBy(0, s);
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2000) load();
+        if (s > 0 && overlay.style.display !== 'flex') {
+            window.scrollBy(0, s);
+        }
+        const triggerPoint = document.body.offsetHeight - (window.innerHeight * 3);
+        if (window.scrollY + window.innerHeight >= triggerPoint) {
+            loadMore();
+        }
         requestAnimationFrame(loop);
     }
 
